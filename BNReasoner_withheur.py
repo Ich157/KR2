@@ -1,6 +1,8 @@
 from typing import Union
 from BayesNet import BayesNet
 import os
+import networkx as nx
+import itertools
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -31,69 +33,47 @@ class BNReasoner:
         for v in var:
             g.
 
-    def min_degree(self, v):
+    def min_degree(self, X):
         """
 
-        :param net: Bayesian Network
+        :param X: set of nodes
         :return: ordering of variables (list)
         """
         g = self.bn.get_interaction_graph()
         #v = self.bn.get_all_variables()
         ordering = []
-        while v:
-            neighbours = []
-            for i in v:
-                neighbours.append(len(list(g.neighbors(i))))  # get the variable with the smallest number of neighbours
-            min_n = min(neighbours)
-            min_index = neighbours.index(min_n)
-            min_deg_var = v[min_index]
-
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            min_deg_var_neigh = list(g.neighbors(min_deg_var))
-            print(min_deg_var_neigh)
-            for x in min_deg_var_neigh:
-                for y in min_deg_var_neigh:
+        while X:
+            degree_order = sorted(list(X), key=lambda n: (g.degree[n], n))
+            print(degree_order)
+            node = degree_order[0]
+            ordering.append(node)
+            node_neighbours = list(g.neighbors(node))
+            for x in node_neighbours:
+                for y in node_neighbours:
                     if not g.has_edge(x, y) or g.has_edge(y, x):
                         g.add_edge(x, y)
-
-                # delete variable from graph and add to ordering
-            g.remove_node(min_deg_var)
-            v.remove(min_deg_var)
-            ordering.append(min_deg_var)
-
-        print(ordering)
+            g.remove_node(node)
         return ordering
 
-    def min_fill(self, bn: BayesNet):
+    def min_fill(self, X):
         """
 
-        :param bn: Bayesian Network
-        :return: ordering of variables (list)
+        :param X: set of nodes
+        :return: list of ordering for variable eliminiation
         """
-        g = bn.get_interaction_graph()
-        v = bn.get_all_variables()
-        ordering = []
-        neighbours = []
 
-        for i in v:
-            # get the variable with the smallest number of neighbours
-            neighbours.append(len(g.neighbors(i)))
-            max_n = max(neighbours)
-            max_index = neighbours.index(max_n)
-            min_fill_var = v[max_index]
-            min_fill_neigh = g.neighbors(min_fill_var)  # save neighbours of variable with minimal degree
+        g = self.bn.get_interaction_graph()
+        ordering = sorted(list(X), key=lambda x: (len(self.search_edges(x, g)), x))
+        return ordering
 
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            edges = g.edges(min_fill_var)
-            for x in min_fill_neigh:
-                if (min_fill_var, x) not in edges:
-                    g.add_edge(min_fill_var, x)
 
-            # delete variable from graph and add to ordering
-            g.remove_node(min_fill_var)
-            v.remove(min_fill_var)
-            ordering.append(min_fill_var)
-            print(ordering)
+    def search_edges(self, node, graph: nx.DiGraph):
+        neighbours = list(graph.neighbors(node))
+        poss_edges = list(itertools.combinations(neighbours, r=2))  #check all possible edge combinations
+        edges = list(filter(lambda e: e in graph.edges, poss_edges))
+        edges_to_add = list(set(poss_edges) - set(edges))
+        return edges_to_add
+
 
     def pruning(self, query , evidence):
         """
@@ -107,7 +87,6 @@ class BNReasoner:
         for v in var:
             if (v not in query) and (v not in evidence) and (not self.bn.get_children(v)):
                 self.bn.del_var(v)
-                # TODO: add that the CPT must be updated.
         # edge pruning
         for e in evidence:
             children = self.bn.get_children(e)
