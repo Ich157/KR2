@@ -16,6 +16,9 @@ class BNReasoner:
         else:
             self.bn = net
 
+
+    # self.bn.structure.pred returns parents
+    #TODO Check dspe method
     def d_seperation(self, X,Z,Y):
         bn = self.bn
         variables = self.bn.get_all_variables()
@@ -116,24 +119,30 @@ class BNReasoner:
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
+        self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts
-        #print("old cpts")
-        #print(all_cpts)
+        print("old cpts")
+        print(all_cpts)
         for cpt in all_cpts:
             new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
-        #print("updated cpts")
-        #print(new_cpts)
+        print("updated cpts")
+        print(new_cpts)
         variables = self.bn.get_all_variables()
         variables.remove(Q)
         ordering = self.min_degree(variables)
+        print(ordering)
         for var in ordering:
-            self.multi_out(new_cpts[var], var)
-        #for var in ordering:
+            self.multi_out(new_cpts, var)
+
 
     #def summing_out(self):
 
-    def multi_out(self, cpt, var):
+    def multi_out(self, cpts, var):
+        parents = self.bn.structure.pred[var]
+        if len(parents) == 0:
+            p = cpts[var]['p']
+
         children_var = self.bn.get_children(var)
         child_cpts = []
         for child in children_var:
@@ -148,27 +157,3 @@ class BNReasoner:
             print("child cpt after")
             print(child_cpt)
 
-
-
-
-        #children_A = self.bn.get_children(A)
-        #A_cpt = self.bn.get_cpt(A)
-        #A_true = A_cpt.loc[A_cpt[A]==True]
-        #print(float(A_true['p']))
-        #A_false = A_cpt.loc[A_cpt[A] == False]
-        #for child in children_A:
-        #    child_cpt = self.bn.get_cpt(child)
-        #    rows_true = child_cpt.loc[child_cpt[A] == True]
-        #    rows_true['p']*float(A_true['p'])
-                #print(child_cpt)
-                #row['p']=row['p']* A_true
-                #child_cpt.loc[row, 'p'] = child_cpt.loc[row, 'p'] * A_true
-                #print(child_cpt)
-              #  child_cpt.loc[child_cpt['p']
-
-            #undone. multiply False rows as well and integrate in A cpt
-            #update cpts
-
-        #add summup function-maybe inside multi-out bc now we would have true and falses for a and to som out we could add first element in true and first and false
-
-        #
