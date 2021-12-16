@@ -1,6 +1,7 @@
 from typing import Union
 from BayesNet import BayesNet
 import networkx as nx
+import itertools
 
 
 class BNReasoner:
@@ -16,10 +17,10 @@ class BNReasoner:
         else:
             self.bn = net
 
-
     # self.bn.structure.pred returns parents
-    #TODO Check dspe method
-    def d_seperation(self, X,Z,Y):
+    # TODO Check dspe method
+
+    def d_seperation(self, X, Z, Y):
         bn = self.bn
         variables = self.bn.get_all_variables()
         for variable in variables:
@@ -30,75 +31,53 @@ class BNReasoner:
         for child_Z in children_Z:
             bn.del_edge([Z, child_Z])
 
-        interaction_graph= bn.get_interaction_graph()
+        interaction_graph = bn.get_interaction_graph()
         if nx.has_path(interaction_graph, X, Y):
             return False
-        else: return True
+        else:
+            return True
 
-    def min_degree(self, v):
+    def min_degree(self, X):
         """
 
-        :param net: Bayesian Network
+        :param X: set of nodes
         :return: ordering of variables (list)
         """
         g = self.bn.get_interaction_graph()
-        #v = self.bn.get_all_variables()
+        # v = self.bn.get_all_variables()
         ordering = []
-        while v:
-            neighbours = []
-            for i in v:
-                neighbours.append(len(list(g.neighbors(i))))  # get the variable with the smallest number of neighbours
-            min_n = min(neighbours)
-            min_index = neighbours.index(min_n)
-            min_deg_var = v[min_index]
-
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            min_deg_var_neigh = list(g.neighbors(min_deg_var))
-            for x in min_deg_var_neigh:
-                for y in min_deg_var_neigh:
+        while X:
+            degree_order = sorted(list(X), key=lambda n: (g.degree[n], n))
+            print(degree_order)
+            node = degree_order[0]
+            ordering.append(node)
+            node_neighbours = list(g.neighbors(node))
+            for x in node_neighbours:
+                for y in node_neighbours:
                     if not g.has_edge(x, y) or g.has_edge(y, x):
                         g.add_edge(x, y)
-
-                # delete variable from graph and add to ordering
-            g.remove_node(min_deg_var)
-            v.remove(min_deg_var)
-            ordering.append(min_deg_var)
-
-        print(ordering)
+            g.remove_node(node)
         return ordering
 
-    def min_fill(self, bn: BayesNet): #TODO has errors
+    def min_fill(self, X):
         """
 
-        :param bn: Bayesian Network
-        :return: ordering of variables (list)
+        :param X: set of nodes
+        :return: list of ordering for variable eliminiation
         """
-        g = bn.get_interaction_graph()
-        v = bn.get_all_variables()
-        ordering = []
-        neighbours = []
 
-        for i in v:
-            # get the variable with the smallest number of neighbours
-            neighbours.append(len(g.neighbors(i)))
-            max_n = max(neighbours)
-            max_index = neighbours.index(max_n)
-            min_fill_var = v[max_index]
-            min_fill_neigh = g.neighbors(min_fill_var)  # save neighbours of variable with minimal degree
+        g = self.bn.get_interaction_graph()
+        ordering = sorted(list(X), key=lambda x: (len(self.search_edges(x, g)), x))
+        return ordering
 
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            edges = g.edges(min_fill_var)
-            for x in min_fill_neigh:
-                if (min_fill_var, x) not in edges:
-                    g.add_edge(min_fill_var, x)
+    def search_edges(self, node, graph: nx.DiGraph):
+        neighbours = list(graph.neighbors(node))
+        poss_edges = list(itertools.combinations(neighbours, r=2))  # check all possible edge combinations
+        edges_present = list(filter(lambda e: e in graph.edges, poss_edges))  # extract all edges that are present
+        edges_to_add = list(set(poss_edges) - set(edges_present))  # delete all present edges from the possible edges
+        return edges_to_add
 
-            # delete variable from graph and add to ordering
-            g.remove_node(min_fill_var)
-            v.remove(min_fill_var)
-            ordering.append(min_fill_var)
-            print(ordering)
-
-    def pruning(self, query , evidence):
+    def pruning(self, query, evidence):
         """
         Given a set of query variables Q and evidence E, function node-prunes the
         Bayesian network
@@ -115,7 +94,7 @@ class BNReasoner:
         for e in evidence:
             children = self.bn.get_children(e)
             for c in children:
-                self.bn.del_edge([e, c])
+                self.bn.del_edge((e, c))
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
@@ -135,8 +114,7 @@ class BNReasoner:
         for var in ordering:
             self.multi_out(new_cpts, var)
 
-
-    #def summing_out(self):
+    # def summing_out(self):
 
     def multi_out(self, cpts, var):
         parents = self.bn.structure.pred[var]
@@ -153,7 +131,7 @@ class BNReasoner:
         for child_cpt in child_cpts:
             print("child cpt before")
             print(child_cpt)
-            child_cpt.loc[child_cpt[var]==True , 'p'] = child_cpt.loc[child_cpt[child_cpt]==True] * rows_true.loc[rows_true[child_cpt==True], 'p']
+            child_cpt.loc[child_cpt[var] == True, 'p'] = child_cpt.loc[child_cpt[child_cpt] == True] * rows_true.loc[
+                rows_true[child_cpt == True], 'p']
             print("child cpt after")
             print(child_cpt)
-
