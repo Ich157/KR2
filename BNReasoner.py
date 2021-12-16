@@ -163,6 +163,7 @@ class BNReasoner:
                 new = new.replace(np.nan, False, regex=True)  # fill up the rest of the rows with False
                 #print(new)
 
+        # TODO: checkout what needs to be multiplicated with what
         for index1, index2 in new.iterrows():
             print(index1)
             print(index2)
