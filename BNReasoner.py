@@ -2,6 +2,9 @@ from typing import Union
 from BayesNet import BayesNet
 import networkx as nx
 import itertools
+import copy
+import pandas as pd
+import numpy as np
 
 
 class BNReasoner:
@@ -102,34 +105,81 @@ class BNReasoner:
         self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts
-        print("old cpts")
+        #print("old cpts")
         #print(all_cpts)
         for cpt in all_cpts:
             new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
-        print("updated cpts")
+        #print("updated cpts")
         #print(new_cpts)
         variables = self.bn.get_all_variables()
         variables.remove(Q)
         ordering = self.min_degree(variables)
         print(ordering)
         for var in ordering:
-            self.multi_out(new_cpts, var)
+            #print("variable to eliminate:")
+            #print(var)
+            self.get_rel_cpts(new_cpts, var)
 
     # def summing_out(self):
 
-    def multi_out(self, cpts, var):
+    def get_rel_cpts(self, cpts, var):
         parents = self.bn.structure.pred[var]
         if len(parents) == 0:
             p = cpts[var]['p']
 
         children_var = self.bn.get_children(var)
-        child_cpts = []
-        for child in children_var:
-            child_cpts.append(self.bn.get_cpt(child))
+        node_cpt = self.bn.get_cpt(var)
+        #print(children_var)
+        if children_var:
+            relevant_cpts = {n: cpts[n] if n in cpts.keys() else cpts[n] for n in children_var}
+            #print(relevant_cpts)
+            for c in children_var:
+                new_cpt = self.multi_out(node_cpt, relevant_cpts[c])
+                del cpts[c]
+            if var in cpts:
+                del cpts[var]
+            new_cpt = self.sum_out(new_cpt, var)
+            return new_cpt
+        else:
+            del cpts[var]
+
+    def multi_out(self, node_cpt, cpt):
+
+        col_cpt1 = set(node_cpt.columns[:-1])
+        col_cpt2 = set(cpt.columns[:-1])
+
+        alpha = col_cpt2 - col_cpt1
+        #print(alpha)
+        #print(node_cpt)
+        #print(cpt)
+
+        for a in alpha:
+            index = len(col_cpt1) - 1
+            if {True, False}.issubset(set(cpt[a])):
+                cpt_copy = copy.deepcopy(node_cpt)
+                node_cpt.insert(index, a, True)
+                #print(node_cpt)
+                new = pd.concat([node_cpt, cpt_copy])
+                new = new.replace(np.nan, False, regex=True)  # fill up the rest of the rows with False
+                #print(new)
+
+        for index1, index2 in new.iterrows():
+            print(index1)
+            print(index2)
+            for _, rows in cpt.iterrows():
+                #print(rows)
+                if index2[col_cpt1].equals(rows[col_cpt1]):
+                    new.at[index1, 'p'] *= rows['p']
+
+        print(new)
+
+    def sum_out(self, cpt, var):
+        pass
+
         #print("child cpts")
         #print(cpts.items())
         rows_true = cpts[var] == 'True'
-        print(rows_true)
+        #print(rows_true)
         rows_false = cpts.loc[cpts[var] == False]
 
         print(rows_true)
