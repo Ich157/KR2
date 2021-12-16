@@ -46,9 +46,9 @@ class BNReasoner:
         g = self.bn.get_interaction_graph()
         # v = self.bn.get_all_variables()
         ordering = []
-        while X:
+        while len(X):
             degree_order = sorted(list(X), key=lambda n: (g.degree[n], n))
-            print(degree_order)
+            #print(degree_order)
             node = degree_order[0]
             ordering.append(node)
             node_neighbours = list(g.neighbors(node))
@@ -57,6 +57,7 @@ class BNReasoner:
                     if not g.has_edge(x, y) or g.has_edge(y, x):
                         g.add_edge(x, y)
             g.remove_node(node)
+            X.remove(node)
         return ordering
 
     def min_fill(self, X):
@@ -102,11 +103,11 @@ class BNReasoner:
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts
         print("old cpts")
-        print(all_cpts)
+        #print(all_cpts)
         for cpt in all_cpts:
             new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
         print("updated cpts")
-        print(new_cpts)
+        #print(new_cpts)
         variables = self.bn.get_all_variables()
         variables.remove(Q)
         ordering = self.min_degree(variables)
@@ -125,9 +126,14 @@ class BNReasoner:
         child_cpts = []
         for child in children_var:
             child_cpts.append(self.bn.get_cpt(child))
-        print("child cpts")
-        rows_true = cpt.loc[cpt[var] == True]
-        rows_false = cpt.loc[cpt[var] == False]
+        #print("child cpts")
+        #print(cpts.items())
+        rows_true = cpts[var] == 'True'
+        print(rows_true)
+        rows_false = cpts.loc[cpts[var] == False]
+
+        print(rows_true)
+        print(rows_false)
         for child_cpt in child_cpts:
             print("child cpt before")
             print(child_cpt)
