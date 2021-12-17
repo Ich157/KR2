@@ -91,18 +91,19 @@ class BNReasoner:
         var = self.bn.get_all_variables()
         # node pruning
         for v in var:
-            if (v not in query) and (v not in evidence) and (not self.bn.get_children(v)):
+
+            if (v not in query) and (v not in evidence) and (len(self.bn.get_children(v)) == 0):
                 self.bn.del_var(v)
                 # TODO: add that the CPT must be updated.
         # edge pruning
-        for e in evidence:
+        for e in evidence.index:
             children = self.bn.get_children(e)
             for c in children:
                 self.bn.del_edge((e, c))
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
-        self.bn.draw_structure()
+        #self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts
         # print("old cpts")
@@ -191,6 +192,35 @@ class BNReasoner:
 
         return dfout
 
+    def map_mpe(self, M: list, E: pd.Series):
+        MAP = True
+        bn = self
+        all_vars = bn.bn.get_all_variables()
+
+        # for mpe there is no Q, not E becomes Q in that case
+        if not (M):
+            MAP = False
+            for var in all_vars:
+                if not E.index._contains_(var):
+                    M.append(var)
+
+        # prune network by evidence
+        bn.pruning(M, E)
+        solution = []
+        if MAP:
+            # calculate the map_cpt
+            map_cpt = bn.marginal_distributions(M, E)
+            # indentify the row with highes p
+            print(map_cpt['p'])
+            max_index = map_cpt['p'].idxmax()
+            # safe values into solution
+            print(max_index)
+            for var in M:
+                solution.append([var, map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)]])
+            print(solution)
+            return solution
+        else:
+            pass
 
 """"
     def get_rel_cpts(self, cpts, var):
