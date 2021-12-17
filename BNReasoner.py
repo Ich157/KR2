@@ -1,6 +1,10 @@
 from typing import Union
 from BayesNet import BayesNet
 import networkx as nx
+import itertools
+import copy
+import pandas as pd
+import numpy as np
 
 
 class BNReasoner:
@@ -16,7 +20,10 @@ class BNReasoner:
         else:
             self.bn = net
 
-    def d_seperation(self, X,Z,Y):
+    # self.bn.structure.pred returns parents
+    # TODO Check dspe method
+
+    def d_seperation(self, X, Z, Y):
         bn = self.bn
         variables = self.bn.get_all_variables()
         for variable in variables:
@@ -27,75 +34,54 @@ class BNReasoner:
         for child_Z in children_Z:
             bn.del_edge([Z, child_Z])
 
-        interaction_graph= bn.get_interaction_graph()
+        interaction_graph = bn.get_interaction_graph()
         if nx.has_path(interaction_graph, X, Y):
             return False
-        else: return True
+        else:
+            return True
 
-    def min_degree(self, v):
+    def min_degree(self, X):
         """
 
-        :param net: Bayesian Network
+        :param X: set of nodes
         :return: ordering of variables (list)
         """
         g = self.bn.get_interaction_graph()
-        #v = self.bn.get_all_variables()
+        # v = self.bn.get_all_variables()
         ordering = []
-        while v:
-            neighbours = []
-            for i in v:
-                neighbours.append(len(list(g.neighbors(i))))  # get the variable with the smallest number of neighbours
-            min_n = min(neighbours)
-            min_index = neighbours.index(min_n)
-            min_deg_var = v[min_index]
-
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            min_deg_var_neigh = list(g.neighbors(min_deg_var))
-            for x in min_deg_var_neigh:
-                for y in min_deg_var_neigh:
+        while len(X):
+            degree_order = sorted(list(X), key=lambda n: (g.degree[n], n))
+            # print(degree_order)
+            node = degree_order[0]
+            ordering.append(node)
+            node_neighbours = list(g.neighbors(node))
+            for x in node_neighbours:
+                for y in node_neighbours:
                     if not g.has_edge(x, y) or g.has_edge(y, x):
                         g.add_edge(x, y)
-
-                # delete variable from graph and add to ordering
-            g.remove_node(min_deg_var)
-            v.remove(min_deg_var)
-            ordering.append(min_deg_var)
-
-        print(ordering)
+            g.remove_node(node)
+            X.remove(node)
         return ordering
 
-    def min_fill(self, bn: BayesNet): #TODO has errors
+    def min_fill(self, X):
         """
 
-        :param bn: Bayesian Network
-        :return: ordering of variables (list)
+        :param X: set of nodes
+        :return: list of ordering for variable eliminiation
         """
-        g = bn.get_interaction_graph()
-        v = bn.get_all_variables()
-        ordering = []
-        neighbours = []
 
-        for i in v:
-            # get the variable with the smallest number of neighbours
-            neighbours.append(len(g.neighbors(i)))
-            max_n = max(neighbours)
-            max_index = neighbours.index(max_n)
-            min_fill_var = v[max_index]
-            min_fill_neigh = g.neighbors(min_fill_var)  # save neighbours of variable with minimal degree
+        g = self.bn.get_interaction_graph()
+        ordering = sorted(list(X), key=lambda x: (len(self.search_edges(x, g)), x))
+        return ordering
 
-            # add edge between every pair of non adjacent neighbours neighbours of min_deg_var
-            edges = g.edges(min_fill_var)
-            for x in min_fill_neigh:
-                if (min_fill_var, x) not in edges:
-                    g.add_edge(min_fill_var, x)
+    def search_edges(self, node, graph: nx.DiGraph):
+        neighbours = list(graph.neighbors(node))
+        poss_edges = list(itertools.combinations(neighbours, r=2))  # check all possible edge combinations
+        edges_present = list(filter(lambda e: e in graph.edges, poss_edges))  # extract all edges that are present
+        edges_to_add = list(set(poss_edges) - set(edges_present))  # delete all present edges from the possible edges
+        return edges_to_add
 
-            # delete variable from graph and add to ordering
-            g.remove_node(min_fill_var)
-            v.remove(min_fill_var)
-            ordering.append(min_fill_var)
-            print(ordering)
-
-    def pruning(self, query , evidence):
+    def pruning(self, query, evidence):
         """
         Given a set of query variables Q and evidence E, function node-prunes the
         Bayesian network
@@ -112,40 +98,170 @@ class BNReasoner:
         for e in evidence:
             children = self.bn.get_children(e)
             for c in children:
-                self.bn.del_edge([e, c])
+                self.bn.del_edge((e, c))
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
-        cpt_q = self.bn.get_cpt(Q)
-        cpt_q = self.bn.get_compatible_instantiations_table(E, cpt_q)
+        self.bn.draw_structure()
+        all_cpts = self.bn.get_all_cpts()
+        new_cpts = all_cpts
+        # print("old cpts")
+        # print(all_cpts)
+        for cpt in all_cpts:
+            new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
+        # print("updated cpts")
+        # print(new_cpts)
         variables = self.bn.get_all_variables()
-        variables.remove(Q)
+        for var in Q:
+            variables.remove(var)
         ordering = self.min_degree(variables)
-        self.multi_out(Q)
-        #for var in ordering:
+        print(ordering)
+        for var in ordering:
+            # print("variable to eliminate:")
+            # print(var)
+            out = self.multi_out(var, new_cpts)
+            summed = self.sum_out(var, out)
+        print(summed)
+        return summed
 
-    #def summing_out(self):
+    # def summing_out(self):
 
-    def multi_out(self, A):
+    def multi_out(self, var, allcpts):
+        """multiplies all factors that refer to a variable.
+            Creates a multiplied(larger) CPT for var. Should it also update it?
 
-        children_A = self.bn.get_children(A)
-        A_cpt = self.bn.get_cpt(A)
-        A_true = A_cpt.loc[A_cpt[A]==True]
-        print(float(A_true['p']))
-        A_false = A_cpt.loc[A_cpt[A] == False]
-        for child in children_A:
-            child_cpt = self.bn.get_cpt(child)
-            rows_true = child_cpt.loc[child_cpt[A] == True]
-            rows_true['p']*float(A_true['p'])
-                #print(child_cpt)
-                #row['p']=row['p']* A_true
-                #child_cpt.loc[row, 'p'] = child_cpt.loc[row, 'p'] * A_true
-                #print(child_cpt)
-              #  child_cpt.loc[child_cpt['p']
+                :param  var: str. the name of variable
+                :return: cpt with variables that appear together with var in their cpts (DataFrame)
+                """
 
-            #undone. multiply False rows as well and integrate in A cpt
-            #update cpts
+        # getting CPTs where var appears on, to be multiplied with each other
+        relavent_cpts = []
+        for cpt in allcpts.values():
+            if cpt.columns.__contains__(var):
+                relavent_cpts.append(cpt)
 
-        #add summup function-maybe inside multi-out bc now we would have true and falses for a and to som out we could add first element in true and first and false
+        # will store unique variable/columns from list of dfs. So will contain all the vars thet the multiplied cpt needs to have
+        var_cols = []
+        for df in relavent_cpts:
+            for col in df.columns:
+                if col not in var_cols:
+                    var_cols.append(col)
+        var_cols.remove('p')
 
-        #
+        temp_cpt = pd.DataFrame(list(itertools.product([False, True], repeat=len(var_cols))), columns=var_cols)
+
+        # merging all dfs , according to cols of the right(smallest) one (p cols included) together
+        for df in relavent_cpts:
+            temp_cpt = temp_cpt.merge(df, on=list(df)[:-1], how='right')
+
+        # getting only p col names, to multiply them
+        pcols = list(temp_cpt)
+        for x in var_cols:
+            pcols.remove(x)
+
+        # multiplication product will be stored in pmulti
+        pmulti = pd.Series(data=1.0, index=temp_cpt.index)
+        # multiplying all pcols
+        for pcol in pcols:
+            pmulti = pmulti * temp_cpt[pcol]
+        # creating output
+        outdf = temp_cpt[var_cols]
+        outdf['p'] = pmulti  # throws settingWithCopyWarning- but works ok
+
+        return outdf
+
+    def sum_out(self, var, multipliedCPT):
+        """eliminates var from multipliedCPT by summing out
+
+        :param  var: str. the name of variable
+        :param  multipliedCPT: cpt with multiplied factors where var appears on (DataFrame, output of multi_out function)
+        :return: cpt with var eliminated (DataFrame)
+        """
+        # creating output,without the col of var we want to eliminate
+        dfout = multipliedCPT.copy()  # if we chose to update ct inside multi out function, then we just need to get_cpt(
+        # var) here
+        dfout = dfout.drop(columns=var)
+
+        # getting sum of rows with same truth values(they will correspond to the 2rows where our var to be eliminated is true and F)
+        relevant_var_cols = [i for i in dfout.columns if
+                             i != 'p']  # making sure that it wont group by p column, will also skip columns with p in name!!fix it
+        dfout = dfout.groupby(relevant_var_cols)['p'].sum()  # summing p from cols with same truth values
+        dfout = dfout.reset_index()
+        # print("reduced cpt:\n"+str(dfout))
+
+        return dfout
+
+
+""""
+    def get_rel_cpts(self, cpts, var):
+        parents = self.bn.structure.pred[var]
+        if len(parents) == 0:
+            p = cpts[var]['p']
+
+        children_var = self.bn.get_children(var)
+        node_cpt = self.bn.get_cpt(var)
+        #print(children_var)
+        if children_var:
+            relevant_cpts = {n: cpts[n] if n in cpts.keys() else cpts[n] for n in children_var}
+            #print(relevant_cpts)
+            for c in children_var:
+                new_cpt = self.multi_out(node_cpt, relevant_cpts[c])
+                del cpts[c]
+            if var in cpts:
+                del cpts[var]
+            new_cpt = self.sum_out(new_cpt, var)
+            return new_cpt
+        else:
+            del cpts[var]
+
+
+    def multi_out(self, node_cpt, cpt):
+
+        col_cpt1 = set(node_cpt.columns[:-1])
+        col_cpt2 = set(cpt.columns[:-1])
+
+        alpha = col_cpt2 - col_cpt1
+        #print(alpha)
+        #print(node_cpt)
+        #print(cpt)
+
+        for a in alpha:
+            index = len(col_cpt1) - 1
+            if {True, False}.issubset(set(cpt[a])):
+                cpt_copy = copy.deepcopy(node_cpt)
+                node_cpt.insert(index, a, True)
+                #print(node_cpt)
+                new = pd.concat([node_cpt, cpt_copy])
+                new = new.replace(np.nan, False, regex=True)  # fill up the rest of the rows with False
+                #print(new)
+
+        # TODO: checkout what needs to be multiplicated with what
+        for index1, index2 in new.iterrows():
+            print(index1)
+            print(index2)
+            for _, rows in cpt.iterrows():
+                #print(rows)
+                if index2[col_cpt1].equals(rows[col_cpt1]):
+                    new.at[index1, 'p'] *= rows['p']
+
+        print(new)
+
+    def sum_out(self, cpt, var):
+        pass
+
+        #print("child cpts")
+        #print(cpts.items())
+        rows_true = cpts[var] == 'True'
+        #print(rows_true)
+        rows_false = cpts.loc[cpts[var] == False]
+
+        print(rows_true)
+        print(rows_false)
+        for child_cpt in child_cpts:
+            print("child cpt before")
+            print(child_cpt)
+            child_cpt.loc[child_cpt[var] == True, 'p'] = child_cpt.loc[child_cpt[child_cpt] == True] * rows_true.loc[
+                rows_true[child_cpt == True], 'p']
+            print("child cpt after")
+            print(child_cpt)
+"""
