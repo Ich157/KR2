@@ -70,3 +70,10 @@ net = BNReasoner(baysnet)
 net.bn.draw_structure()
 all_cpts = net.bn.get_all_cpts()
 print(all_cpts)
+
+net = BNReasoner("testing/lecture_example2.BIFXML")
+Q= ['I', 'J']
+E= pd.Series({'O':True})
+
+mapsol= net.map_mpe(['I', 'J'],E)
+print(mapsol)

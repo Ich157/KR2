@@ -103,9 +103,9 @@ class BNReasoner:
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
-        #self.bn.draw_structure()
+        # net.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
-        new_cpts = all_cpts
+        new_cpts = all_cpts.copy()
         # print("old cpts")
         # print(all_cpts)
         for cpt in all_cpts:
@@ -117,27 +117,36 @@ class BNReasoner:
             variables.remove(var)
         ordering = self.min_degree(variables)
         print(ordering)
-        for var in ordering:
+        for i in range(len(ordering)):
+            var = ordering[i]
             # print("variable to eliminate:")
             # print(var)
             out = self.multi_out(var, new_cpts)
             summed = self.sum_out(var, out)
-        print(summed)
-        return summed
+            # updating new-cpt with REDUCED cpt from variable that was just eliminated
+            new_cpts[var] = summed
+            # print(summed)
+            # deleting previously calculated factor, as var has been eliminated!!!!!
+            if i > 0:
+                new_cpts.pop(ordering[i - 1])
 
-    # def summing_out(self):
+        # the new CPT, with only Q vars, is the one of the last var that was calculated!.
+        # normalising on the sum of the rowss
+        new_cpts[var]['p'] = new_cpts[var]['p'] / new_cpts[var]['p'].sum()
 
-    def multi_out(self, var, allcpts):
+        return new_cpts[var]
+
+    def multi_out(self, var, updatedCPTs):
         """multiplies all factors that refer to a variable.
             Creates a multiplied(larger) CPT for var. Should it also update it?
 
                 :param  var: str. the name of variable
                 :return: cpt with variables that appear together with var in their cpts (DataFrame)
                 """
-
+        # t = self.bn.get_all_cpts()
         # getting CPTs where var appears on, to be multiplied with each other
         relavent_cpts = []
-        for cpt in allcpts.values():
+        for cpt in updatedCPTs.values():
             if cpt.columns.__contains__(var):
                 relavent_cpts.append(cpt)
 
@@ -192,35 +201,70 @@ class BNReasoner:
 
         return dfout
 
-    def map_mpe(self, M: list, E: pd.Series):
+    def map_mpe(self, Q: list, E: pd.Series):
         MAP = True
         bn = self
         all_vars = bn.bn.get_all_variables()
 
         # for mpe there is no Q, not E becomes Q in that case
-        if not (M):
+        if not (Q):
             MAP = False
             for var in all_vars:
                 if not E.index._contains_(var):
-                    M.append(var)
+                    Q.append(var)
 
         # prune network by evidence
-        bn.pruning(M, E)
-        solution = []
+        bn.pruning(Q, E)
+        # solution = pd.Series()
         if MAP:
             # calculate the map_cpt
-            map_cpt = bn.marginal_distributions(M, E)
+            map_cpt = bn.marginal_distributions(Q, E)
             # indentify the row with highes p
-            print(map_cpt['p'])
             max_index = map_cpt['p'].idxmax()
             # safe values into solution
-            print(max_index)
-            for var in M:
-                solution.append([var, map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)]])
-            print(solution)
-            return solution
+            for var in Q:
+                truth_value = []
+                truth_value.append(map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)])
+                # sol = pd.Series([var, truth_value])
+                # solution.append(sol)
+            return pd.DataFrame(data=[truth_value], index=(Q))
         else:
             pass
+
+    # def map_mpe(self, M: list, E: pd.Series):
+    #     MAP = True
+    #     bn = self
+    #     all_vars = bn.bn.get_all_variables()
+
+    #     # for mpe there is no Q, not E becomes Q in that case
+    #     if not (M):
+    #         MAP = False
+    #         for var in all_vars:
+    #             if not E.index._contains_(var):
+    #                 M.append(var)
+
+    #     # prune network by evidence
+    #     bn.pruning(M, E)
+    #     solution = []
+    #     if MAP:
+    #         # get non map vars
+    #         nonMap_vars = all_vars
+    #         for var in M:
+    #             nonMap_vars.remove(var)
+    #         # calculate the map_cpt
+    #         map_cpt = bn.marginal_distributions(nonMap_vars, E)
+    #         # indentify the row with highes p
+    #         print(map_cpt['p'])
+    #         max_index = map_cpt['p'].idxmax()
+    #         # safe values into solution
+    #         print(max_index)
+    #         for var in M:
+    #             solution.append([var, map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)]])
+    #         print(solution)
+    #         return solution
+    #     else:
+    #         pass
+
 
 """"
     def get_rel_cpts(self, cpts, var):
