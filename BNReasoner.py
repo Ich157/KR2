@@ -161,9 +161,10 @@ class BNReasoner:
         # getting CPTs where var appears on, to be multiplied with each other
         relavent_cpts = []
         for cpt in updatedCPTs.values():
-            if cpt.columns.__contains__(var):
+            if cpt.columns.__contains__(var) or cpt.columns.__contains__(int(var)):
                 relavent_cpts.append(cpt)
-
+        if len(relavent_cpts) == 0:
+            pass
         # will store unique variable/columns from list of dfs. So will contain all the vars thet the multiplied cpt needs to have
         var_cols = []
         for df in relavent_cpts:

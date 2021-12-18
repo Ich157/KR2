@@ -10,7 +10,7 @@ import csv
 import datetime
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-n_executions = 1
+n_executions = 5
 n_Q = 3
 n_E = 3
 network_size = 10
@@ -45,10 +45,11 @@ def create_network_params(n_variables):
 
     # create cpt
     for var in variables:
-        columns = parents[var].append(var)
-        new_cpt = pd.DataFrame(list(itertools.product([False, True], repeat=len(parents[var])+1)), columns=columns)
+        columns = parents[var]
+        columns.append(var)
+        new_cpt = pd.DataFrame(list(itertools.product([False, True], repeat=len(columns))), columns=columns)
         p_values = []
-        for i in range(pow(2,len(parents[var]))):
+        for i in range(pow(2,len(columns)-1)):
             value = random.uniform(0, 1)
             p_values.append(value)
             p_values.append(1-value)
@@ -83,32 +84,34 @@ com_time_mpe_min_degree = []
 
 for i in range(n_executions):
     Q = []
-    E = []
+    E_var = []
     for n in range(n_E):
         e = random.choice(var)
-        while(E.__contains__(e)):
+        while(E_var.__contains__(e)):
             e = random.choice(var)
-        E.append(e)
+        E_var.append(e)
     for n in range(n_Q):
         q = random.choice(var)
-        while(Q.__contains__(q) or E.__contains__(q)):
+        while(Q.__contains__(q) or E_var.__contains__(q)):
             q = random.choice(var)
         Q.append(q)
+
+    E = pd.Series({E_var[0]:False, E_var[1]:True, E_var[2]:False})
 
     #MAP with different heu
     print("map random")
     t_before = datetime.datetime.now()
-    net.map_mpe(Q,E,"random")
+    net.map_mpe(Q, E, "random")
     t_after = datetime.datetime.now()
     com_time_map_random.append(t_after-t_before)
     print("map min fill")
     t_before = datetime.datetime.now()
-    net.map_mpe(Q,E,"min_fill")
+    net.map_mpe(Q, E, "min_fill")
     t_after = datetime.datetime.now()
     com_time_map_min_fill.append(t_after-t_before)
     print("map min_degree")
     t_before = datetime.datetime.now()
-    net.map_mpe(Q,E,"min_degree")
+    net.map_mpe(Q, E, "min_degree")
     t_after = datetime.datetime.now()
     com_time_map_min_degree.append(t_after-t_before)
 
