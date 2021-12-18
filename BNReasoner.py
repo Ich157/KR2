@@ -5,6 +5,7 @@ import itertools
 import copy
 import pandas as pd
 import numpy as np
+import random
 
 
 class BNReasoner:
@@ -80,6 +81,9 @@ class BNReasoner:
         edges_present = list(filter(lambda e: e in graph.edges, poss_edges))  # extract all edges that are present
         edges_to_add = list(set(poss_edges) - set(edges_present))  # delete all present edges from the possible edges
         return edges_to_add
+
+    def random_order(self, X):
+        return random.shuffle(list(X))
 
     def pruning(self, query, evidence):
         """
@@ -233,6 +237,7 @@ class BNReasoner:
             for var in Q:
                 truth_value = []
                 truth_value.append(mep_cpt.iloc[max_index, mep_cpt.columns.get_loc(var)])
+                print(truth_value)
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
