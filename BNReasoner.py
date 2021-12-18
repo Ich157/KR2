@@ -6,6 +6,7 @@ import copy
 import pandas as pd
 import numpy as np
 import random
+from string import ascii_lowercase
 
 
 class BNReasoner:
@@ -107,7 +108,11 @@ class BNReasoner:
             # TODO: update CPT
 
     def marginal_distributions(self, Q, E):
-        # net.bn.draw_structure()
+        """Calculates marginal distribution for variables in Q (list) given evidence E (pd series of dict). 
+
+                eliminates every var not in q and updates cpts in new_cpts. Returns a cpt (dataframe) with onle the Q vars
+                """
+        # self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts.copy()
         # print("old cpts")
@@ -141,7 +146,7 @@ class BNReasoner:
 
     def multi_out(self, var, updatedCPTs):
         """multiplies all factors that refer to a variable.
-            Creates a multiplied(larger) CPT for var. Should it also update it?
+            Creates a multiplied(larger) CPT for var. 
 
                 :param  var: str. the name of variable
                 :return: cpt with variables that appear together with var in their cpts (DataFrame)
@@ -164,8 +169,9 @@ class BNReasoner:
         temp_cpt = pd.DataFrame(list(itertools.product([False, True], repeat=len(var_cols))), columns=var_cols)
 
         # merging all dfs , according to cols of the right(smallest) one (p cols included) together
+        it = iter(ascii_lowercase) # to not get same p col names
         for df in relavent_cpts:
-            temp_cpt = temp_cpt.merge(df, on=list(df)[:-1], how='right')
+            temp_cpt = temp_cpt.merge(df, on=list(df)[:-1], how='right', suffixes= ('_' + next(it), '_' + next(it)))
 
         # getting only p col names, to multiply them
         pcols = list(temp_cpt)
@@ -241,7 +247,7 @@ class BNReasoner:
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
-
+        
     # def map_mpe(self, M: list, E: pd.Series):
     #     MAP = True
     #     bn = self

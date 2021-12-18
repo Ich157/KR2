@@ -9,15 +9,16 @@ import itertools
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 # net = BNReasoner("testing/dog_problem.BIFXML")
-#net = BNReasoner("testing/lecture_example2.BIFXML")
-#variables = net.bn.get_all_variables()
+# net = BNReasoner("testing/lecture_example2.BIFXML")
+# variables = net.bn.get_all_variables()
 #print(variables)
 #print(net.bn.draw_structure())
 #net.bn.BNReasoner.marginal_distributions(variables[3], variables[1])
 #print(net.d_seperation(variables[0],variables[1],variables[2]))
-#evidence = pd.Series({'O':True})
-#net.marginal_distributions(['Wet Grass?', 'Slippery Road?'],evidence)
-#net.map_mpe(['I', 'J'],evidence)
+
+# evidence = pd.Series({'Winter?':True, 'Sprinkler?': False})
+# out = net.marginal_distributions(['Wet Grass?', 'Slippery Road?'],evidence)
+# net.map_mpe(['I', 'J'],evidence)
 
 
 def create_network_params(n_variables):
@@ -74,6 +75,8 @@ var, edges, cpts = create_network_params(15)
 net = BNReasoner("testing/lecture_example2.BIFXML")
 Q= ['I', 'J']
 E= pd.Series({'O':False, 'J':True})
+# E= pd.Series({'O':True})
 
 mapsol= net.map_mpe([],E)
-print(mapsol)
+# mapsol= net.map_mpe(Q,E)
+# print(mapsol)
