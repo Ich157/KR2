@@ -84,7 +84,8 @@ class BNReasoner:
         return edges_to_add
 
     def random_order(self, X):
-        return random.shuffle(list(X))
+        order = random.sample(X, len(X))
+        return order
 
     def pruning(self, query, evidence):
         """
@@ -101,6 +102,7 @@ class BNReasoner:
                 self.bn.del_var(v)
                 # TODO: add that the CPT must be updated.
         # edge pruning
+        print(evidence.index)
         for e in evidence.index:
             children = self.bn.get_children(e)
             for c in children:
@@ -242,7 +244,7 @@ class BNReasoner:
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
         else:
-            mep_cpt = bn.marginal_distributions(Q, E)
+            mep_cpt = bn.marginal_distributions(Q, E, order_heu)
             max_index = mep_cpt['p'].idxmax()
             for var in Q:
                 truth_value = []

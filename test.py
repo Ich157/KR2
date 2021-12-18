@@ -75,8 +75,8 @@ var, edges, cpts = create_network_params(15)
 net = BNReasoner("testing/lecture_example2.BIFXML")
 Q= ['I', 'J']
 E= pd.Series({'O':False, 'J':True})
-# E= pd.Series({'O':True})
+#E= pd.Series({'O':True})
 
-mapsol= net.map_mpe([],E)
+mapsol= net.map_mpe([],E, 'rand')
 # mapsol= net.map_mpe(Q,E)
-# print(mapsol)
+print(mapsol)
