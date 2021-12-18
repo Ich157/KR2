@@ -64,16 +64,16 @@ def create_network_params(n_variables):
 
 var, edges, cpts = create_network_params(15)
 
-baysnet = BayesNet()
-baysnet.create_bn(var,edges,cpts)
-net = BNReasoner(baysnet)
-net.bn.draw_structure()
-all_cpts = net.bn.get_all_cpts()
-print(all_cpts)
+#baysnet = BayesNet()
+#baysnet.create_bn(var,edges,cpts)
+#net = BNReasoner(baysnet)
+#net.bn.draw_structure()
+#all_cpts = net.bn.get_all_cpts()
+#print(all_cpts)
 
 net = BNReasoner("testing/lecture_example2.BIFXML")
 Q= ['I', 'J']
-E= pd.Series({'O':True})
+E= pd.Series({'O':False, 'J':True})
 
-mapsol= net.map_mpe(['I', 'J'],E)
+mapsol= net.map_mpe([],E)
 print(mapsol)

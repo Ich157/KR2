@@ -133,7 +133,6 @@ class BNReasoner:
         # the new CPT, with only Q vars, is the one of the last var that was calculated!.
         # normalising on the sum of the rowss
         new_cpts[var]['p'] = new_cpts[var]['p'] / new_cpts[var]['p'].sum()
-
         return new_cpts[var]
 
     def multi_out(self, var, updatedCPTs):
@@ -207,10 +206,10 @@ class BNReasoner:
         all_vars = bn.bn.get_all_variables()
 
         # for mpe there is no Q, not E becomes Q in that case
-        if not (Q):
+        if not Q:
             MAP = False
             for var in all_vars:
-                if not E.index._contains_(var):
+                if var not in E:
                     Q.append(var)
 
         # prune network by evidence
@@ -227,9 +226,16 @@ class BNReasoner:
                 truth_value.append(map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)])
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
-            return pd.DataFrame(data=[truth_value], index=(Q))
+            return pd.DataFrame(data=[truth_value], index=Q)
         else:
-            pass
+            mep_cpt = bn.marginal_distributions(Q, E)
+            max_index = mep_cpt['p'].idxmax()
+            for var in Q:
+                truth_value = []
+                truth_value.append(mep_cpt.iloc[max_index, mep_cpt.columns.get_loc(var)])
+                # sol = pd.Series([var, truth_value])
+                # solution.append(sol)
+            return pd.DataFrame(data=[truth_value], index=Q)
 
     # def map_mpe(self, M: list, E: pd.Series):
     #     MAP = True
