@@ -163,8 +163,7 @@ class BNReasoner:
         for cpt in updatedCPTs.values():
             if cpt.columns.__contains__(var) or cpt.columns.__contains__(int(var)):
                 relavent_cpts.append(cpt)
-        if len(relavent_cpts) == 0:
-            pass
+
         # will store unique variable/columns from list of dfs. So will contain all the vars thet the multiplied cpt needs to have
         var_cols = []
         for df in relavent_cpts:
@@ -189,11 +188,21 @@ class BNReasoner:
         pmulti = pd.Series(data=1.0, index=temp_cpt.index)
         # multiplying all pcols
         for pcol in pcols:
-            pmulti = pmulti * temp_cpt[pcol]
+            try:
+                pmulti = pmulti * temp_cpt[pcol]
+            except:
+                print("temp cpt in multi")
+                print(temp_cpt)
         # creating output
         outdf = temp_cpt[var_cols]
         outdf['p'] = pmulti  # throws settingWithCopyWarning- but works ok
-
+        if len(outdf.columns) <= 1:
+            print("multi end temp cpt")
+            print(temp_cpt)
+            print("multi end var")
+            print(var)
+            print("multi end updated cpts")
+            print(updatedCPTs)
         return outdf
 
     def sum_out(self, var, multipliedCPT):
@@ -211,7 +220,11 @@ class BNReasoner:
         # getting sum of rows with same truth values(they will correspond to the 2rows where our var to be eliminated is true and F)
         relevant_var_cols = [i for i in dfout.columns if
                              i != 'p']  # making sure that it wont group by p column, will also skip columns with p in name!!fix it
-        dfout = dfout.groupby(relevant_var_cols)['p'].sum()  # summing p from cols with same truth values
+        try:
+            dfout = dfout.groupby(relevant_var_cols)['p'].sum()  # summing p from cols with same truth values
+        except:
+
+            print("relevant_var_cols")
         dfout = dfout.reset_index()
         # print("reduced cpt:\n"+str(dfout))
 
@@ -249,7 +262,10 @@ class BNReasoner:
             max_index = mep_cpt['p'].idxmax()
             for var in Q:
                 truth_value = []
-                truth_value.append(mep_cpt.iloc[max_index, mep_cpt.columns.get_loc(var)])
+                try:
+                    truth_value.append(mep_cpt.iloc[max_index, mep_cpt.columns.get_loc(var)])
+                except:
+                    print(var)
                 print(truth_value)
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
