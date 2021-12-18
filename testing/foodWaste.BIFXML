@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+
+
+
+<!-- DTD for the XMLBIF 0.3 format -->
+<!DOCTYPE BIF [
+	<!ELEMENT BIF ( NETWORK )*>
+	      <!ATTLIST BIF VERSION CDATA #REQUIRED>
+	<!ELEMENT NETWORK ( NAME, ( PROPERTY | VARIABLE | DEFINITION )* )>
+	<!ELEMENT NAME (#PCDATA)>
+	<!ELEMENT VARIABLE ( NAME, ( OUTCOME |  PROPERTY )* ) >
+	      <!ATTLIST VARIABLE TYPE (nature|decision|utility) "nature">
+	<!ELEMENT OUTCOME (#PCDATA)>
+	<!ELEMENT DEFINITION ( FOR | GIVEN | TABLE | PROPERTY )* >
+	<!ELEMENT FOR (#PCDATA)>
+	<!ELEMENT GIVEN (#PCDATA)>
+	<!ELEMENT TABLE (#PCDATA)>
+	<!ELEMENT PROPERTY (#PCDATA)>
+]>
+
+
+<BIF VERSION="0.3">
+<NETWORK>
+<NAME>Dog-Problem</NAME>
+
+
+<!-- Variables -->
+<VARIABLE TYPE="nature">
+	<NAME>Food Waste</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (73, 165)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Home Waste</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (190, 69)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Production Waste</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (155, 165)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Retail Waste</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (154, 241)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Pestes</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (112, 69)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>High Temperature</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (122, 79)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Bad Storage</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (132, 96)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Developed Country</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (222, 60)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>Good Looking Preference</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (75, 55)</PROPERTY>
+</VARIABLE>
+
+<VARIABLE TYPE="nature">
+	<NAME>High Income Household</NAME>
+	<OUTCOME>true</OUTCOME>
+	<OUTCOME>false</OUTCOME>
+	<PROPERTY>position = (55, 90)</PROPERTY>
+</VARIABLE>
+
+
+<!-- Probability distributions -->
+
+
+<DEFINITION>
+	<FOR>High Temperature</FOR>
+	<TABLE>0.7 0.3</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Developed Country</FOR>
+	<TABLE>0.4 0.6</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>High Income Household</FOR>
+	<TABLE>0.35 0.65</TABLE>
+</DEFINITION>
+
+
+<DEFINITION>
+	<FOR>Bad Storage</FOR>
+	<GIVEN>High Temperature</GIVEN>
+	<GIVEN>Developed Country</GIVEN>
+	<TABLE>0.7 0.3 0.9 0.1 0.2 0.8 0.6 0.4</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Pestes</FOR>
+	<GIVEN>High Temperature</GIVEN>
+	<GIVEN>Bad Storage</GIVEN>
+	<TABLE>0.9 0.1 0.8 0.2 0.6 0.4 0.1 0.9</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Production Waste</FOR>
+	<GIVEN>Bad Storage</GIVEN>
+	<GIVEN>Pestes</GIVEN>
+	<TABLE>1 0 0.9 0.1 0.7 0.3 0.3 0.7</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Good Looking Preference</FOR>
+	<GIVEN>Developed Country</GIVEN>
+	<GIVEN>High Income Household</GIVEN>
+	<TABLE>0.99 0.01 0.7 0.3 0.8 0.2 0.3 0.7</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Retail Waste</FOR>
+	<GIVEN>Bad Storage</GIVEN>
+	<GIVEN>Good Looking Preference</GIVEN>
+	<TABLE>0.6 0.4 0.5 0.5 0.4 0.6 0.2 0.8</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Home Waste</FOR>
+	<GIVEN>Good Looking Preference</GIVEN>
+	<GIVEN>High Income Household</GIVEN>
+	<TABLE>0.6 0.4 0.5 0.5 0.3 0.7 0.2 0.8</TABLE>
+</DEFINITION>
+
+<DEFINITION>
+	<FOR>Food Waste</FOR>
+	<GIVEN>Production Waste</GIVEN>
+	<GIVEN>Retail Waste</GIVEN>
+	<GIVEN>Home Waste</GIVEN>
+	<TABLE>1 0 0.7 0.3 0.6 0.4 0.3 0.7 0.7 0.3 0.4 0.6 0.3 0.7 0 1</TABLE>
+</DEFINITION>
+
+</NETWORK>
+</BIF>
