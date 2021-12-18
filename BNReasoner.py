@@ -107,7 +107,7 @@ class BNReasoner:
                 self.bn.del_edge((e, c))
             # TODO: update CPT
 
-    def marginal_distributions(self, Q, E):
+    def marginal_distributions(self, Q, E, order_heu):
         """Calculates marginal distribution for variables in Q (list) given evidence E (pd series of dict). 
 
                 eliminates every var not in q and updates cpts in new_cpts. Returns a cpt (dataframe) with onle the Q vars
@@ -124,7 +124,11 @@ class BNReasoner:
         variables = self.bn.get_all_variables()
         for var in Q:
             variables.remove(var)
-        ordering = self.min_degree(variables)
+        ordering = self.random_order(variables)
+        if order_heu == "min_degree":
+            ordering = self.min_degree(variables)
+        if order_heu == "min_fill":
+            ordering = self.min_fill(variables)
         print(ordering)
         for i in range(len(ordering)):
             var = ordering[i]
@@ -210,7 +214,7 @@ class BNReasoner:
 
         return dfout
 
-    def map_mpe(self, Q: list, E: pd.Series):
+    def map_mpe(self, Q: list, E: pd.Series, order_heu):
         MAP = True
         bn = self
         all_vars = bn.bn.get_all_variables()
@@ -227,7 +231,7 @@ class BNReasoner:
         # solution = pd.Series()
         if MAP:
             # calculate the map_cpt
-            map_cpt = bn.marginal_distributions(Q, E)
+            map_cpt = bn.marginal_distributions(Q, E, order_heu)
             # indentify the row with highes p
             max_index = map_cpt['p'].idxmax()
             # safe values into solution
