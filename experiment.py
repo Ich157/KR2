@@ -57,23 +57,27 @@ def create_network_params(n_variables):
 
     return variables, edges, cpts
 
-for network_size in range (10,100,10):
+result_file = open('results.csv', 'w')
+result_writer = csv.writer(result_file)
+result_writer.writerow(['network_size',
+                        'computing times map random', 'avg computing times map random',
+                        'computing times map min_fill', 'avg computing times map min_fill',
+                        'computing times map min_degree', 'avg computing map times min_degree',
+                        'computing times mpe random', 'avg computing times mpe random',
+                        'computing times mpe min_fill', 'avg computing times mpe min_fill',
+                        'computing times mpr min_degree', 'avg computing times mpe min_degree'
+                        ])
+for network_size in range (10,40,5):
+    print("networksize")
+    print(network_size)
     var, edges, cpts = create_network_params(network_size)
 
     baysnet = BayesNet()
     baysnet.create_bn(var,edges,cpts)
     keep_net = BNReasoner(baysnet)
 
-    result_file = open('results.csv', 'w')
-    result_writer = csv.writer(result_file)
-    result_writer.writerow(['network_size',
-                            'computing times map random','avg computing times map random',
-                            'computing times map min_fill','avg computing times map min_fill',
-                            'computing times map min_degree','avg computing map times min_degree',
-                            'computing times mpe random', 'avg computing times mpe random',
-                            'computing times mpe min_fill', 'avg computing times mpe min_fill',
-                            'computing times mpr min_degree', 'avg computing times mpe min_degree'
-                            ])
+
+
 
     com_time_map_random = []
     com_time_map_min_fill = []
@@ -104,7 +108,7 @@ for network_size in range (10,100,10):
         print(Q)
         print("E")
         print(E)
-        keep_net.bn.draw_structure()
+       # keep_net.bn.draw_structure()
 
         #MAP with different heu
         print("map random")
@@ -164,3 +168,8 @@ for network_size in range (10,100,10):
                             com_time_mpe_min_degree,
                             (sum(com_time_mpe_min_degree, datetime.timedelta(0)) / len(com_time_mpe_min_degree)).seconds * 1000000 + (sum(com_time_mpe_min_degree, datetime.timedelta(0)) / len(com_time_mpe_min_degree)).microseconds,
                             ])
+
+result_writer.writerow("")
+result_writer.writerow("")
+result_writer.writerow("")
+print("experiment done")

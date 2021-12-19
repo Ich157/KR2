@@ -137,6 +137,8 @@ class BNReasoner:
             # print("variable to eliminate:")
             # print(var)
             out = self.multi_out(var, new_cpts)
+            print("this is the multi out")
+            print(out)
             summed = self.sum_out(var, out)
             # updating new-cpt with REDUCED cpt from variable that was just eliminated
             new_cpts[var] = summed
@@ -228,12 +230,16 @@ class BNReasoner:
         relevant_var_cols = [i for i in dfout.columns if
                              i != 'p']  # making sure that it wont group by p column, will also skip columns with p in name!!fix it
         try:
+            print("dfout before groupby")
+            print(dfout)
             dfout = dfout.groupby(relevant_var_cols)['p'].sum()  # summing p from cols with same truth values
-        except:
 
+        except:
             print("relevant_var_cols")
         dfout = dfout.reset_index()
         # print("reduced cpt:\n"+str(dfout))
+        print("dfout after groupby")
+        print(dfout)
 
         return dfout
 
@@ -255,24 +261,35 @@ class BNReasoner:
         if MAP:
             # calculate the map_cpt
             map_cpt = bn.marginal_distributions(Q, E, order_heu)
+            print("this is map cpt")
+            print(map_cpt)
+            print("this is Q")
+            print(Q)
             # indentify the row with highes p
             max_index = map_cpt['p'].idxmax()
             # safe values into solution
             for var in Q:
                 truth_value = []
-                truth_value.append(map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)])
+                try:
+                    truth_value.append(map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)])
+                except:
+                    print("Q not in map cpts")
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
         else:
-            mep_cpt = bn.marginal_distributions(Q, E, order_heu)
-            max_index = mep_cpt['p'].idxmax()
+            mpe_cpt = bn.marginal_distributions(Q, E, order_heu)
+            print("this is mpe cpt")
+            print(mpe_cpt)
+            print("this is Q")
+            print(Q)
+            max_index = mpe_cpt['p'].idxmax()
             for var in Q:
                 truth_value = []
                 try:
-                    truth_value.append(mep_cpt.iloc[max_index, mep_cpt.columns.get_loc(var)])
+                    truth_value.append(mpe_cpt.iloc[max_index, mpe_cpt.columns.get_loc(var)])
                 except:
-                    print(var)
+                    print("Q not in MPE cpt")
                 print(truth_value)
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
