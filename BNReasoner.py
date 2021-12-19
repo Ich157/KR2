@@ -32,15 +32,17 @@ class BNReasoner:
             if len(bn.get_children(variable)) < 1:
                 if not (X.__contains__(variable) or Y.__contains__(variable) or Z.__contains__(variable)):
                     bn.del_var(variable)
-        children_Z = bn.get_children(Z)
-        for child_Z in children_Z:
-            bn.del_edge([Z, child_Z])
+        for z in Z:
+            children = bn.get_children(z)
+            for child_Z in children:
+                bn.del_edge([z, child_Z])
 
         interaction_graph = bn.get_interaction_graph()
-        if nx.has_path(interaction_graph, X, Y):
-            return False
-        else:
-            return True
+        for x in X:
+            for y in Y:
+                if nx.has_path(interaction_graph, x, y):
+                    return False
+        return True
 
     def min_degree(self, X):
         """
@@ -53,7 +55,6 @@ class BNReasoner:
         ordering = []
         while len(X):
             degree_order = sorted(list(X), key=lambda n: (g.degree[n], n))
-            # print(degree_order)
             node = degree_order[0]
             ordering.append(node)
             node_neighbours = list(g.neighbors(node))
@@ -102,7 +103,6 @@ class BNReasoner:
                 self.bn.del_var(v)
                 # TODO: add that the CPT must be updated.
         # edge pruning
-        print(evidence.index)
         for e in evidence.index:
             children = self.bn.get_children(e)
             for c in children:
@@ -117,12 +117,8 @@ class BNReasoner:
         # self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts.copy()
-        # print("old cpts")
-        # print(all_cpts)
         for cpt in all_cpts:
             new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
-        # print("updated cpts")
-        # print(new_cpts)
         variables = self.bn.get_all_variables()
         for var in Q:
             variables.remove(var)
@@ -131,14 +127,9 @@ class BNReasoner:
             ordering = self.min_degree(variables)
         if order_heu == "min_fill":
             ordering = self.min_fill(variables)
-        print(ordering)
         for i in range(len(ordering)):
             var = ordering[i]
-            # print("variable to eliminate:")
-            # print(var)
             out = self.multi_out(var, new_cpts)
-            print("this is the multi out")
-            print(out)
             summed = self.sum_out(var, out)
             # updating new-cpt with REDUCED cpt from variable that was just eliminated
             new_cpts[var] = summed
@@ -200,18 +191,10 @@ class BNReasoner:
             try:
                 pmulti = pmulti * temp_cpt[pcol]
             except:
-                print("temp cpt in multi")
-                print(temp_cpt)
+                pass
         # creating output
         outdf = temp_cpt[var_cols]
         outdf['p'] = pmulti  # throws settingWithCopyWarning- but works ok
-        if len(outdf.columns) <= 1:
-            print("multi end temp cpt")
-            print(temp_cpt)
-            print("multi end var")
-            print(var)
-            print("multi end updated cpts")
-            print(updatedCPTs)
         return outdf
 
     def sum_out(self, var, multipliedCPT):
@@ -230,16 +213,10 @@ class BNReasoner:
         relevant_var_cols = [i for i in dfout.columns if
                              i != 'p']  # making sure that it wont group by p column, will also skip columns with p in name!!fix it
         try:
-            print("dfout before groupby")
-            print(dfout)
             dfout = dfout.groupby(relevant_var_cols)['p'].sum()  # summing p from cols with same truth values
-
         except:
-            print("relevant_var_cols")
+            pass
         dfout = dfout.reset_index()
-        # print("reduced cpt:\n"+str(dfout))
-        print("dfout after groupby")
-        print(dfout)
 
         return dfout
 
@@ -261,10 +238,6 @@ class BNReasoner:
         if MAP:
             # calculate the map_cpt
             map_cpt = bn.marginal_distributions(Q, E, order_heu)
-            print("this is map cpt")
-            print(map_cpt)
-            print("this is Q")
-            print(Q)
             # indentify the row with highes p
             max_index = map_cpt['p'].idxmax()
             # safe values into solution
@@ -273,133 +246,19 @@ class BNReasoner:
                 try:
                     truth_value.append(map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)])
                 except:
-                    print("Q not in map cpts")
+                    pass
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
         else:
             mpe_cpt = bn.marginal_distributions(Q, E, order_heu)
-            print("this is mpe cpt")
-            print(mpe_cpt)
-            print("this is Q")
-            print(Q)
             max_index = mpe_cpt['p'].idxmax()
             for var in Q:
                 truth_value = []
                 try:
                     truth_value.append(mpe_cpt.iloc[max_index, mpe_cpt.columns.get_loc(var)])
                 except:
-                    print("Q not in MPE cpt")
-                print(truth_value)
+                    pass
                 # sol = pd.Series([var, truth_value])
                 # solution.append(sol)
             return pd.DataFrame(data=[truth_value], index=Q)
-        
-    # def map_mpe(self, M: list, E: pd.Series):
-    #     MAP = True
-    #     bn = self
-    #     all_vars = bn.bn.get_all_variables()
-
-    #     # for mpe there is no Q, not E becomes Q in that case
-    #     if not (M):
-    #         MAP = False
-    #         for var in all_vars:
-    #             if not E.index._contains_(var):
-    #                 M.append(var)
-
-    #     # prune network by evidence
-    #     bn.pruning(M, E)
-    #     solution = []
-    #     if MAP:
-    #         # get non map vars
-    #         nonMap_vars = all_vars
-    #         for var in M:
-    #             nonMap_vars.remove(var)
-    #         # calculate the map_cpt
-    #         map_cpt = bn.marginal_distributions(nonMap_vars, E)
-    #         # indentify the row with highes p
-    #         print(map_cpt['p'])
-    #         max_index = map_cpt['p'].idxmax()
-    #         # safe values into solution
-    #         print(max_index)
-    #         for var in M:
-    #             solution.append([var, map_cpt.iloc[max_index, map_cpt.columns.get_loc(var)]])
-    #         print(solution)
-    #         return solution
-    #     else:
-    #         pass
-
-
-""""
-    def get_rel_cpts(self, cpts, var):
-        parents = self.bn.structure.pred[var]
-        if len(parents) == 0:
-            p = cpts[var]['p']
-
-        children_var = self.bn.get_children(var)
-        node_cpt = self.bn.get_cpt(var)
-        #print(children_var)
-        if children_var:
-            relevant_cpts = {n: cpts[n] if n in cpts.keys() else cpts[n] for n in children_var}
-            #print(relevant_cpts)
-            for c in children_var:
-                new_cpt = self.multi_out(node_cpt, relevant_cpts[c])
-                del cpts[c]
-            if var in cpts:
-                del cpts[var]
-            new_cpt = self.sum_out(new_cpt, var)
-            return new_cpt
-        else:
-            del cpts[var]
-
-
-    def multi_out(self, node_cpt, cpt):
-
-        col_cpt1 = set(node_cpt.columns[:-1])
-        col_cpt2 = set(cpt.columns[:-1])
-
-        alpha = col_cpt2 - col_cpt1
-        #print(alpha)
-        #print(node_cpt)
-        #print(cpt)
-
-        for a in alpha:
-            index = len(col_cpt1) - 1
-            if {True, False}.issubset(set(cpt[a])):
-                cpt_copy = copy.deepcopy(node_cpt)
-                node_cpt.insert(index, a, True)
-                #print(node_cpt)
-                new = pd.concat([node_cpt, cpt_copy])
-                new = new.replace(np.nan, False, regex=True)  # fill up the rest of the rows with False
-                #print(new)
-
-        # TODO: checkout what needs to be multiplicated with what
-        for index1, index2 in new.iterrows():
-            print(index1)
-            print(index2)
-            for _, rows in cpt.iterrows():
-                #print(rows)
-                if index2[col_cpt1].equals(rows[col_cpt1]):
-                    new.at[index1, 'p'] *= rows['p']
-
-        print(new)
-
-    def sum_out(self, cpt, var):
-        pass
-
-        #print("child cpts")
-        #print(cpts.items())
-        rows_true = cpts[var] == 'True'
-        #print(rows_true)
-        rows_false = cpts.loc[cpts[var] == False]
-
-        print(rows_true)
-        print(rows_false)
-        for child_cpt in child_cpts:
-            print("child cpt before")
-            print(child_cpt)
-            child_cpt.loc[child_cpt[var] == True, 'p'] = child_cpt.loc[child_cpt[child_cpt] == True] * rows_true.loc[
-                rows_true[child_cpt == True], 'p']
-            print("child cpt after")
-            print(child_cpt)
-"""
