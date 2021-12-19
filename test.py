@@ -72,11 +72,13 @@ var, edges, cpts = create_network_params(15)
 #all_cpts = net.bn.get_all_cpts()
 #print(all_cpts)
 
-net = BNReasoner("testing/lecture_example2.BIFXML")
-Q= ['I', 'J']
-E= pd.Series({'O':False, 'J':True})
-#E= pd.Series({'O':True})
+# net = BNReasoner("testing/Graph1.xml")
+# net = BNReasoner("testing/b30-101.xml")
+# Q= ['I', 'J']
+# E= pd.Series({'O':True})
+# E = pd.Series({'node0':True})
+# Q = ['node2', 'node5', 'node10', 'node11']
+# output = net.map_mpe(Q, E, "random")
 
-mapsol= net.map_mpe([],E, 'rand')
 # mapsol= net.map_mpe(Q,E)
-print(mapsol)
+# print(mapsol)

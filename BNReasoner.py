@@ -140,10 +140,12 @@ class BNReasoner:
             summed = self.sum_out(var, out)
             # updating new-cpt with REDUCED cpt from variable that was just eliminated
             new_cpts[var] = summed
-            # print(summed)
-            # deleting previously calculated factor, as var has been eliminated!!!!!
-            if i > 0:
-                new_cpts.pop(ordering[i - 1])
+            
+            #loop thu cols of new_cpts. If var2be eliminated is on column--> update that cpt with the summed!
+            for node, cpt in new_cpts.items():
+                if cpt.columns.__contains__(var): #or cpt.columns.__contains__(int(var)):
+                        new_cpts[node] = summed
+            
 
         # the new CPT, with only Q vars, is the one of the last var that was calculated!.
         # normalising on the sum of the rowss
@@ -159,9 +161,10 @@ class BNReasoner:
                 """
         # t = self.bn.get_all_cpts()
         # getting CPTs where var appears on, to be multiplied with each other
+        # also storing nodes that hold them, to be updated with new factor
         relavent_cpts = []
         for cpt in updatedCPTs.values():
-            if cpt.columns.__contains__(var) or cpt.columns.__contains__(int(var)):
+            if cpt.columns.__contains__(var): #or cpt.columns.__contains__(int(var)):
                 relavent_cpts.append(cpt)
 
         # will store unique variable/columns from list of dfs. So will contain all the vars thet the multiplied cpt needs to have
@@ -175,9 +178,13 @@ class BNReasoner:
         temp_cpt = pd.DataFrame(list(itertools.product([False, True], repeat=len(var_cols))), columns=var_cols)
 
         # merging all dfs , according to cols of the right(smallest) one (p cols included) together
-        it = iter(ascii_lowercase) # to not get same p col names
-        for df in relavent_cpts:
-            temp_cpt = temp_cpt.merge(df, on=list(df)[:-1], how='right', suffixes= ('_' + next(it), '_' + next(it)))
+        # it = iter(ascii_lowercase) # to not get same p col names-------------------------------------------------------del?
+        # for df in relavent_cpts:
+        #     temp_cpt = temp_cpt.merge(df, on=list(df)[:-1], how='right', suffixes= ('_' + next(it), '_' + next(it)))-------del?
+        for i, df in enumerate(relavent_cpts):
+            temp_cpt = temp_cpt.merge(df.rename(columns={'p': f'p{i}'}),
+                      on=df.columns[:-1].tolist(), how='right')
+            
 
         # getting only p col names, to multiply them
         pcols = list(temp_cpt)
