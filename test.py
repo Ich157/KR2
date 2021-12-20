@@ -22,10 +22,12 @@ print(net.d_seperation([variables[0],variables[1]],[variables[2]],[variables[4],
 evidence = pd.Series({'Rain?':True, 'Sprinkler?': False})
 net = copy.deepcopy(keep_net)
 print("marginals solution")
-print(net.marginal_distributions(['Wet Grass?', 'Slippery Road?'],evidence, "random"))
+print(net.marginal_distributions(['Wet Grass?', 'Slippery Road?'],evidence, "min_degree"))
 net = copy.deepcopy(keep_net)
 print("map solution")
 print(net.map_mpe(['Wet Grass?', 'Winter?'],evidence,"min_degree"))
 net = copy.deepcopy(keep_net)
 print("mpe solution")
 print(net.map_mpe([],evidence, "min_fill"))
+
+outmarg = (net.marginal_distributions(['Wet Grass?', 'Slippery Road?'],evidence, "min_degree"))
