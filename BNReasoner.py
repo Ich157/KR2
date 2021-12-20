@@ -26,7 +26,10 @@ class BNReasoner:
     # TODO Check dspe method
 
     def d_seperation(self, X, Z, Y):
+        '''checks if X is d separated from Y given Z. Works with sets of vars too
+        X,Y,Z: lists'''
         bn = self.bn
+        
         variables = self.bn.get_all_variables()
         for variable in variables:
             if len(bn.get_children(variable)) < 1:
@@ -117,8 +120,9 @@ class BNReasoner:
         # self.bn.draw_structure()
         all_cpts = self.bn.get_all_cpts()
         new_cpts = all_cpts.copy()
-        for cpt in all_cpts:
-            new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
+        if len(E) != 0: #--------------------------dont update in case of prior prob!
+            for cpt in all_cpts:
+                new_cpts[cpt] = self.bn.get_compatible_instantiations_table(E, all_cpts[cpt])
         variables = self.bn.get_all_variables()
         for var in Q:
             variables.remove(var)
@@ -134,7 +138,8 @@ class BNReasoner:
             # updating new-cpt with REDUCED cpt from variable that was just eliminated
             new_cpts[var] = summed
             
-            #loop thu cols of new_cpts. If var2be eliminated is on column--> update that cpt with the summed!
+            #Updating relevant factors.
+            # loop thu cols of new_cpts. If var2be eliminated is on column--> update that cpt with the summed!
             for node, cpt in new_cpts.items():
                 if cpt.columns.__contains__(var): #or cpt.columns.__contains__(int(var)):
                         new_cpts[node] = summed
@@ -142,7 +147,7 @@ class BNReasoner:
 
         # the new CPT, with only Q vars, is the one of the last var that was calculated!.
         # normalising on the sum of the rowss
-        new_cpts[var]['p'] = new_cpts[var]['p'] / new_cpts[var]['p'].sum()
+        new_cpts[var]['p'] = new_cpts[var]['p'] / new_cpts[var]['p'].sum() #----------------we still need to normalise in case of prior prob
         return new_cpts[var]
 
     def multi_out(self, var, updatedCPTs):
