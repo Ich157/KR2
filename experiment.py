@@ -11,8 +11,8 @@ import datetime
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 n_executions = 5
-n_Q = 3
-n_E = 3
+n_Q = 2
+n_E = 2
 
 def create_network_params(n_variables):
 
@@ -58,16 +58,19 @@ def create_network_params(n_variables):
     return variables, edges, cpts
 
 result_file = open('results.csv', 'w')
+individual_file = open('individual.csv', 'w')
 result_writer = csv.writer(result_file)
+individual_writer = csv.writer(individual_file)
 result_writer.writerow(['network_size',
-                        'computing times map random', 'avg computing times map random',
-                        'computing times map min_fill', 'avg computing times map min_fill',
-                        'computing times map min_degree', 'avg computing map times min_degree',
-                        'computing times mpe random', 'avg computing times mpe random',
-                        'computing times mpe min_fill', 'avg computing times mpe min_fill',
-                        'computing times mpr min_degree', 'avg computing times mpe min_degree'
+                        'avg computing times map random',
+                        'avg computing times map min_fill',
+                        'avg computing map times min_degree',
+                        'avg computing times mpe random',
+                        'avg computing times mpe min_fill',
+                        'avg computing times mpe min_degree'
                         ])
-for network_size in range (10,40,5):
+individual_writer.writerow(['networksize', 'algorithm and ordering','run 1', 'run 2', 'run 3', 'run 4', 'run 5'])
+for network_size in range (40,41,5):
     print("networksize")
     print(network_size)
     var, edges, cpts = create_network_params(network_size)
@@ -102,7 +105,7 @@ for network_size in range (10,40,5):
                 q = random.choice(var)
             Q.append(q)
 
-        E = pd.Series({E_var[0]:False, E_var[1]:True, E_var[2]:False})
+        E = pd.Series({E_var[0]:False, E_var[1]:True})
 
         print("Q")
         print(Q)
@@ -155,21 +158,63 @@ for network_size in range (10,40,5):
         com_time_mpe_min_degree.append(t_after - t_before)
 
     result_writer.writerow([network_size,
-                            com_time_map_random,
                             (sum(com_time_map_random, datetime.timedelta(0)) / len(com_time_map_random)).seconds * 1000000 + (sum(com_time_map_random, datetime.timedelta(0)) / len(com_time_map_random)).microseconds,
-                            com_time_map_min_fill,
                             (sum(com_time_map_min_fill, datetime.timedelta(0)) / len(com_time_map_min_fill)).seconds * 1000000 + (sum(com_time_map_min_fill, datetime.timedelta(0)) / len(com_time_map_min_fill)).microseconds,
-                            com_time_map_min_degree,
                             (sum(com_time_map_min_degree, datetime.timedelta(0)) / len(com_time_map_min_degree)).seconds * 1000000 + (sum(com_time_map_min_degree, datetime.timedelta(0)) / len(com_time_map_min_degree)).microseconds,
-                            com_time_mpe_random,
                             (sum(com_time_mpe_random, datetime.timedelta(0)) / len(com_time_mpe_random)).seconds * 1000000 + (sum(com_time_mpe_random, datetime.timedelta(0)) / len(com_time_mpe_random)).microseconds,
-                            com_time_mpe_min_fill,
                             (sum(com_time_mpe_min_fill, datetime.timedelta(0)) / len(com_time_mpe_min_fill)).seconds * 1000000 + (sum(com_time_mpe_min_fill, datetime.timedelta(0)) / len(com_time_mpe_min_fill)).microseconds,
-                            com_time_mpe_min_degree,
                             (sum(com_time_mpe_min_degree, datetime.timedelta(0)) / len(com_time_mpe_min_degree)).seconds * 1000000 + (sum(com_time_mpe_min_degree, datetime.timedelta(0)) / len(com_time_mpe_min_degree)).microseconds,
                             ])
+    individual_writer.writerow([network_size,
+                               'map_random',
+                               com_time_map_random[0].seconds*1000000 + com_time_map_random[0].microseconds,
+                               com_time_map_random[1].seconds*1000000 + com_time_map_random[1].microseconds,
+                               com_time_map_random[2].seconds*1000000 + com_time_map_random[2].microseconds,
+                               com_time_map_random[3].seconds*1000000 + com_time_map_random[3].microseconds,
+                               com_time_map_random[4].seconds*1000000 + com_time_map_random[4].microseconds,
+                               ])
+    individual_writer.writerow([network_size,
+                               'map_min_fill',
+                               com_time_map_min_fill[0].seconds*1000000 + com_time_map_min_fill[0].microseconds,
+                               com_time_map_min_fill[1].seconds*1000000 + com_time_map_min_fill[1].microseconds,
+                               com_time_map_min_fill[2].seconds*1000000 + com_time_map_min_fill[2].microseconds,
+                               com_time_map_min_fill[3].seconds*1000000 + com_time_map_min_fill[3].microseconds,
+                               com_time_map_min_fill[4].seconds*1000000 + com_time_map_min_fill[4].microseconds,
+                               ])
+    individual_writer.writerow([network_size,
+                               'map_min_degree',
+                               com_time_map_min_degree[0].seconds*1000000 + com_time_map_min_degree[0].microseconds,
+                               com_time_map_min_degree[1].seconds*1000000 + com_time_map_min_degree[1].microseconds,
+                               com_time_map_min_degree[2].seconds*1000000 + com_time_map_min_degree[2].microseconds,
+                               com_time_map_min_degree[3].seconds*1000000 + com_time_map_min_degree[3].microseconds,
+                               com_time_map_min_degree[4].seconds*1000000 + com_time_map_min_degree[4].microseconds,
+                               ])
 
-result_writer.writerow("")
-result_writer.writerow("")
+    individual_writer.writerow([network_size,
+                               'mpe_random',
+                               com_time_mpe_random[0].seconds*1000000 + com_time_mpe_min_degree[0].microseconds,
+                               com_time_mpe_random[1].seconds*1000000 + com_time_mpe_min_degree[1].microseconds,
+                               com_time_mpe_random[2].seconds*1000000 + com_time_mpe_min_degree[2].microseconds,
+                               com_time_mpe_random[3].seconds*1000000 + com_time_mpe_min_degree[3].microseconds,
+                               com_time_mpe_random[4].seconds*1000000 + com_time_mpe_min_degree[4].microseconds,
+                               ])
+    individual_writer.writerow([network_size,
+                               'mpe_min_fill',
+                               com_time_mpe_min_fill[0].seconds*1000000 + com_time_mpe_min_fill[0].microseconds,
+                               com_time_mpe_min_fill[1].seconds*1000000 + com_time_mpe_min_fill[0].microseconds,
+                               com_time_mpe_min_fill[2].seconds*1000000 + com_time_mpe_min_fill[0].microseconds,
+                               com_time_mpe_min_fill[3].seconds*1000000 + com_time_mpe_min_fill[0].microseconds,
+                               com_time_mpe_min_fill[4].seconds*1000000 + com_time_mpe_min_fill[0].microseconds,
+                               ])
+    individual_writer.writerow([network_size,
+                               'mpe_min_degree',
+                               com_time_mpe_min_degree[0].seconds*1000000 + com_time_mpe_min_degree[0].microseconds,
+                               com_time_mpe_min_degree[1].seconds*1000000 + com_time_mpe_min_degree[1].microseconds,
+                               com_time_mpe_min_degree[2].seconds*1000000 + com_time_mpe_min_degree[2].microseconds,
+                               com_time_mpe_min_degree[3].seconds*1000000 + com_time_mpe_min_degree[3].microseconds,
+                               com_time_mpe_min_degree[4].seconds*1000000 + com_time_mpe_min_degree[4].microseconds,
+                               ])
+
+individual_writer.writerow("")
 result_writer.writerow("")
 print("experiment done")
